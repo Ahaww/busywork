@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>聊天界面发送按钮测试</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #F8FAFF;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    
+    #app {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    #canvas-container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      max-width: 500px;
+      background: #F8FAFF;
+    }
+    
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+      cursor: pointer;
+      border: 1px solid #ddd;
+    }
+    
+    #test-info {
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      background: rgba(255, 255, 255, 0.9);
+      padding: 10px;
+      border-radius: 5px;
+      font-size: 12px;
+      z-index: 1000;
+      max-width: 300px;
+    }
+    
+    #test-info h3 {
+      margin-bottom: 5px;
+      color: #333;
+    }
+    
+    #test-info p {
+      margin: 2px 0;
+      color: #666;
+    }
+    
+    @media (max-width: 500px) {
+      #canvas-container {
+        max-width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div id="canvas-container">
+      <canvas id="gameCanvas"></canvas>
+    </div>
+  </div>
+  
+  <div id="test-info">
+    <h3>发送按钮测试</h3>
+    <p>点击Canvas查看坐标信息</p>
+    <p id="canvas-size">Canvas大小: 0x0</p>
+    <p id="container-size">容器大小: 0x0</p>
+    <p id="click-position">点击位置: (0, 0)</p>
+    <p id="canvas-coords">Canvas坐标: (0, 0)</p>
+    <p id="send-btn-area">发送按钮区域: (0, 0) - (0, 0)</p>
+    <p id="is-send-btn">是否点击发送按钮: 否</p>
+  </div>
+  
+  <script>
+    // 模拟聊天界面的配置
+    const config = {
+      statusBarHeight: 88,
+      inputY: window.innerHeight - 60,
+      inputHeight: 50,
+      sidePadding: 12
+    };
+    
+    const canvas = document.getElementById('gameCanvas');
+    const container = document.getElementById('canvas-container');
+    const ctx = canvas.getContext('2d');
+    
+    // 设置Canvas大小
+    function resizeCanvas() {
+      const rect = container.getBoundingClientRect();
+      canvas.width = rect.width;
+      canvas.height = rect.height;
+      
+      document.getElementById('canvas-size').textContent = `Canvas大小: ${canvas.width}x${canvas.height}`;
+      document.getElementById('container-size').textContent = `容器大小: ${rect.width}x${rect.height}`;
+      
+      // 更新发送按钮区域信息
+      updateSendBtnArea();
+      // 重绘
+      render();
+    }
+    
+    // 更新发送按钮区域信息
+    function updateSendBtnArea() {
+      const inputH = 36;
+      const inputY = config.inputY + Math.floor((config.inputHeight - inputH) / 2);
+      const sendBtnWidth = 60;
+      const sendBtnX = canvas.width - sendBtnWidth - config.sidePadding;
+      
+      document.getElementById('send-btn-area').textContent = 
+        `发送按钮区域: (${sendBtnX.toFixed(0)}, ${inputY.toFixed(0)}) - (${(sendBtnX + sendBtnWidth).toFixed(0)}, ${(inputY + inputH).toFixed(0)})`;
+    }
+    
+    // 渲染聊天界面
+    function render() {
+      // 清空画布
+      ctx.fillStyle = '#F8FAFF';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // 绘制标题栏
+      ctx.fillStyle = '#5B8BF7';
+      ctx.fillRect(0, 0, canvas.width, config.statusBarHeight);
+      
+      // 绘制返回按钮
+      ctx.fillStyle = '#FFFFFF';
+      ctx.beginPath();
+      ctx.moveTo(20, config.statusBarHeight * 0.5);
+      ctx.lineTo(35, config.statusBarHeight * 0.35);
+      ctx.lineTo(35, config.statusBarHeight * 0.65);
+      ctx.closePath();
+      ctx.fill();
+      
+      // 绘制标题
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = '18px Arial';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('情绪倾诉', canvas.width / 2, config.statusBarHeight * 0.5);
+      
+      // 绘制输入区域
+      ctx.fillStyle = '#F7F7F7';
+      ctx.fillRect(0, config.inputY, canvas.width, canvas.height - config.inputY);
+      
+      // 绘制分割线
+      ctx.fillStyle = '#DADADA';
+      ctx.fillRect(0, config.inputY, canvas.width, 1);
+      
+      // 绘制输入框
+      const inputH = 36;
+      const inputY = config.inputY + Math.floor((config.inputHeight - inputH) / 2);
+      const inputX = config.sidePadding;
+      const sendBtnWidth = 60;
+      const inputW = canvas.width - inputX - sendBtnWidth - config.sidePadding - 10;
+      
+      ctx.fillStyle = '#FFFFFF';
+      ctx.beginPath();
+      ctx.roundRect(inputX, inputY, inputW, inputH, 6);
+      ctx.fill();
+      
+      ctx.strokeStyle = '#CFCFCF';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      
+      // 绘制输入提示
+      ctx.fillStyle = '#A0A0A0';
+      ctx.font = '16px Arial';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('输入消息', inputX + 10, inputY + inputH / 2);
+      
+      // 绘制发送按钮
+      const sendBtnX = canvas.width - sendBtnWidth - config.sidePadding;
+      ctx.fillStyle = '#07C160';
+      ctx.beginPath();
+      ctx.roundRect(sendBtnX, inputY, sendBtnWidth, inputH, 6);
+      ctx.fill();
+      
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = '16px Arial';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('发送', sendBtnX + sendBtnWidth / 2, inputY + inputH / 2);
+    }
+    
+    // 坐标转换函数
+    function getCanvasCoordinates(e) {
+      const rect = canvas.getBoundingClientRect();
+      let x, y;
+      
+      if (e.clientX !== undefined) {
+        // 鼠标事件
+        x = e.clientX - rect.left;
+        y = e.clientY - rect.top;
+      } else if (e.touches && e.touches[0]) {
+        // 触摸事件
+        x = e.touches[0].clientX - rect.left;
+        y = e.touches[0].clientY - rect.top;
+      } else if (e.changedTouches && e.changedTouches[0]) {
+        // 触摸结束事件
+        x = e.changedTouches[0].clientX - rect.left;
+        y = e.changedTouches[0].clientY - rect.top;
+      }
+      
+      // 转换为Canvas实际大小的坐标
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      
+      return {
+        x: x * scaleX,
+        y: y * scaleY
+      };
+    }
+    
+    // 检查是否点击发送按钮
+    function isSendBtnClicked(x, y) {
+      const inputH = 36;
+      const inputY = config.inputY + Math.floor((config.inputHeight - inputH) / 2);
+      const sendBtnWidth = 60;
+      const sendBtnX = canvas.width - sendBtnWidth - config.sidePadding;
+      
+      return x >= sendBtnX && 
+             x <= sendBtnX + sendBtnWidth && 
+             y >= inputY && 
+             y <= inputY + inputH;
+    }
+    
+    // 点击事件处理
+    function handleClick(e) {
+      e.preventDefault();
+      
+      const clientX = e.clientX || (e.touches && e.touches[0].clientX) || (e.changedTouches && e.changedTouches[0].clientX);
+      const clientY = e.clientY || (e.touches && e.touches[0].clientY) || (e.changedTouches && e.changedTouches[0].clientY);
+      
+      document.getElementById('click-position').textContent = `点击位置: (${clientX.toFixed(0)}, ${clientY.toFixed(0)})`;
+      
+      const coords = getCanvasCoordinates(e);
+      if (coords.x !== undefined && coords.y !== undefined) {
+        document.getElementById('canvas-coords').textContent = `Canvas坐标: (${coords.x.toFixed(0)}, ${coords.y.toFixed(0)})`;
+        
+        const clickedSendBtn = isSendBtnClicked(coords.x, coords.y);
+        document.getElementById('is-send-btn').textContent = `是否点击发送按钮: ${clickedSendBtn ? '是' : '否'}`;
+        
+        // 绘制点击效果
+        ctx.fillStyle = clickedSendBtn ? 'rgba(7, 193, 96, 0.3)' : 'rgba(0, 0, 0, 0.1)';
+        ctx.beginPath();
+        ctx.arc(coords.x, coords.y, 20, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // 300ms后重绘
+        setTimeout(render, 300);
+      }
+    }
+    
+    // 添加事件监听器
+    canvas.addEventListener('click', handleClick);
+    canvas.addEventListener('touchstart', handleClick);
+    canvas.addEventListener('touchend', handleClick);
+    
+    // 初始化
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+    
+    // 初始渲染
+    render();
+  </script>
+</body>
+</html>

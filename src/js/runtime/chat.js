@@ -21,8 +21,9 @@ export default class ChatInterface extends Emitter {
     this.isInputActive = false;
     this.isKeyboardVisible = false;
     
-    // 运行环境标记
-    this.isWxEnv = typeof wx !== 'undefined';
+    // 运行环境标记 - 只有在真实的微信环境中才为true
+    this.isWxEnv = false;
+    console.log('[ChatInterface] isWxEnv:', this.isWxEnv);
     
     // 微信风格 UI 尺寸
     this.statusBarHeight = 88; // 标题栏高度增加
@@ -66,11 +67,7 @@ export default class ChatInterface extends Emitter {
     }
     
     // 绑定触摸事件
-    if (typeof wx !== 'undefined') {
-      this.bindWxTouchEvents();
-    } else {
-      console.warn('[ChatInterface] wx 未定义，触摸事件不可用');
-    }
+    this.bindDirectTouchEvents();
     
     // 绑定键盘输入（微信小游戏环境）
     this.setupKeyboard();
@@ -217,6 +214,93 @@ export default class ChatInterface extends Emitter {
         wx[eventName](this.boundTouchHandlers[handlerKey]);
       }
     });
+  }
+  
+  bindDirectTouchEvents() {
+    const canvas = document.getElementById('gameCanvas');
+    
+    if (!canvas) {
+      console.error('[ChatInterface] Canvas not found');
+      return;
+    }
+    
+    // 坐标转换函数，将屏幕坐标转换为Canvas坐标
+    const getCanvasCoordinates = (e) => {
+      const rect = canvas.getBoundingClientRect();
+      let x, y;
+      
+      if (e.clientX !== undefined) {
+        // 鼠标事件
+        x = e.clientX - rect.left;
+        y = e.clientY - rect.top;
+      } else if (e.touches && e.touches[0]) {
+        // 触摸事件
+        x = e.touches[0].clientX - rect.left;
+        y = e.touches[0].clientY - rect.top;
+      } else if (e.changedTouches && e.changedTouches[0]) {
+        // 触摸结束事件
+        x = e.changedTouches[0].clientX - rect.left;
+        y = e.changedTouches[0].clientY - rect.top;
+      }
+      
+      // 转换为Canvas实际大小的坐标
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      
+      return {
+        x: x * scaleX,
+        y: y * scaleY
+      };
+    };
+    
+    // 统一的事件处理函数
+    this.directTouchStartHandler = (e) => {
+      e.preventDefault();
+      const coords = getCanvasCoordinates(e);
+      if (coords.x !== undefined && coords.y !== undefined) {
+        console.log('[ChatInterface] Start event:', { x: coords.x, y: coords.y });
+        const event = {
+          touches: [{ clientX: coords.x, clientY: coords.y }]
+        };
+        this.touchStartHandler(event);
+      }
+    };
+    
+    this.directTouchMoveHandler = (e) => {
+      e.preventDefault();
+      const coords = getCanvasCoordinates(e);
+      if (coords.x !== undefined && coords.y !== undefined) {
+        console.log('[ChatInterface] Move event:', { x: coords.x, y: coords.y });
+        const event = {
+          touches: [{ clientX: coords.x, clientY: coords.y }]
+        };
+        this.touchMoveHandler(event);
+      }
+    };
+    
+    this.directTouchEndHandler = (e) => {
+      e.preventDefault();
+      const coords = getCanvasCoordinates(e);
+      if (coords.x !== undefined && coords.y !== undefined) {
+        console.log('[ChatInterface] End event:', { x: coords.x, y: coords.y });
+        const event = {
+          changedTouches: [{ clientX: coords.x, clientY: coords.y }]
+        };
+        this.touchEndHandler(event);
+      }
+    };
+    
+    // 添加事件监听器
+    canvas.addEventListener('mousedown', this.directTouchStartHandler);
+    canvas.addEventListener('touchstart', this.directTouchStartHandler);
+    
+    canvas.addEventListener('mousemove', this.directTouchMoveHandler);
+    canvas.addEventListener('touchmove', this.directTouchMoveHandler);
+    
+    canvas.addEventListener('mouseup', this.directTouchEndHandler);
+    canvas.addEventListener('touchend', this.directTouchEndHandler);
+    
+    console.log('[ChatInterface] Direct event listeners bound to canvas');
   }
   
   /**
@@ -381,8 +465,40 @@ export default class ChatInterface extends Emitter {
         confirmText: '发送'
       });
     } else {
-      // 如果没有 wx.showKeyboard，保持激活状态但不自动发送
-      // 用户可以通过点击发送按钮发送消息
+      // 在浏览器环境中，聚焦到隐藏的输入框
+      const keyboardInput = document.getElementById('keyboard-input');
+      if (keyboardInput) {
+        console.log('[ChatInterface] Keyboard input element found:', keyboardInput);
+        keyboardInput.value = this.inputText || '';
+        
+        // 强制聚焦
+        setTimeout(() => {
+          keyboardInput.focus();
+          console.log('[ChatInterface] Keyboard input focused');
+          
+          // 检查聚焦状态
+          console.log('[ChatInterface] Input is focused:', document.activeElement === keyboardInput);
+        }, 100);
+        
+        // 监听输入事件
+        keyboardInput.oninput = (e) => {
+          this.inputText = e.target.value;
+          console.log('[ChatInterface] Input changed:', this.inputText);
+        };
+        
+        // 监听回车键发送
+        keyboardInput.onkeydown = (e) => {
+          console.log('[ChatInterface] Key pressed:', e.key);
+          if (e.key === 'Enter') {
+            console.log('[ChatInterface] Enter key pressed, sending message');
+            this.sendMessage();
+          }
+        };
+        
+        console.log('[ChatInterface] Keyboard input activated in browser');
+      } else {
+        console.error('[ChatInterface] Keyboard input element not found');
+      }
     }
   }
   
@@ -843,6 +959,40 @@ export default class ChatInterface extends Emitter {
     } else {
       this.inputText += char;
     }
+  }
+  
+  /**
+   * 清理事件监听器
+   */
+  deactivate() {
+    const canvas = document.getElementById('gameCanvas');
+    
+    if (!canvas) {
+      console.error('[ChatInterface] Canvas not found for deactivation');
+      return;
+    }
+    
+    // 移除事件监听器
+    if (this.directTouchStartHandler) {
+      canvas.removeEventListener('mousedown', this.directTouchStartHandler);
+      canvas.removeEventListener('touchstart', this.directTouchStartHandler);
+    }
+    if (this.directTouchMoveHandler) {
+      canvas.removeEventListener('mousemove', this.directTouchMoveHandler);
+      canvas.removeEventListener('touchmove', this.directTouchMoveHandler);
+    }
+    if (this.directTouchEndHandler) {
+      canvas.removeEventListener('mouseup', this.directTouchEndHandler);
+      canvas.removeEventListener('touchend', this.directTouchEndHandler);
+    }
+    
+    // 隐藏键盘
+    const keyboardInput = document.getElementById('keyboard-input');
+    if (keyboardInput) {
+      keyboardInput.blur();
+    }
+    
+    console.log('[ChatInterface] Event listeners removed');
   }
 }
 

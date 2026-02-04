@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#5B8BF7">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="心灵伙伴">
+  <title>心灵伙伴 - 心理健康助手</title>
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" type="image/png" href="/icon-192.png">
+  <link rel="apple-touch-icon" href="/icon-192.png">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #F8FAFF;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    
+    #app {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    #canvas-container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      max-width: 500px;
+      background: #F8FAFF;
+      z-index: 1;
+    }
+    
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+      cursor: pointer;
+      z-index: 2;
+      position: relative;
+    }
+    
+    #keyboard-input {
+      position: fixed;
+      top: -9999px;
+      left: -9999px;
+      opacity: 0;
+    }
+    
+    @media (max-width: 500px) {
+      #canvas-container {
+        max-width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div id="canvas-container">
+      <canvas id="gameCanvas" style="width: 100%; height: 100%; touch-action: none; cursor: pointer;"></canvas>
+    </div>
+  </div>
+  <input type="text" id="keyboard-input" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

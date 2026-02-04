@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Canvas事件测试</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #F8FAFF;
+    }
+    
+    #test-canvas {
+      width: 100%;
+      height: 100%;
+      background: #F8FAFF;
+      cursor: pointer;
+    }
+    
+    #debug {
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      background: rgba(0, 0, 0, 0.8);
+      color: white;
+      padding: 10px;
+      font-family: monospace;
+      font-size: 12px;
+      z-index: 9999;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="test-canvas"></canvas>
+  <div id="debug">点击Canvas查看事件信息</div>
+  
+  <script>
+    const canvas = document.getElementById('test-canvas');
+    const ctx = canvas.getContext('2d');
+    const debug = document.getElementById('debug');
+    
+    // 设置Canvas尺寸
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      drawUI();
+    }
+    
+    // 绘制测试UI
+    function drawUI() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      // 绘制背景
+      ctx.fillStyle = '#F8FAFF';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // 绘制状态栏
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(0, 0, canvas.width, 88);
+      
+      // 绘制标题
+      ctx.fillStyle = '#2D3748';
+      ctx.font = 'bold 20px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText('心灵伙伴', canvas.width / 2, 44);
+      
+      // 绘制按钮
+      const buttonWidth = (canvas.width - 90) / 2;
+      const buttonHeight = 120;
+      const startX = 30;
+      const startY = 208;
+      
+      const buttons = [
+        { x: startX, y: startY, width: buttonWidth, height: buttonHeight, label: '情绪倾诉', color: '#F0F7FF' },
+        { x: startX + buttonWidth + 30, y: startY, width: buttonWidth, height: buttonHeight, label: '呼吸放松', color: '#F0FFF4' },
+        { x: startX, y: startY + buttonHeight + 20, width: buttonWidth, height: buttonHeight, label: '心理科普', color: '#FFFAF0' },
+        { x: startX + buttonWidth + 30, y: startY + buttonHeight + 20, width: buttonWidth, height: buttonHeight, label: '心情日记', color: '#FAF5FF' }
+      ];
+      
+      buttons.forEach((btn, index) => {
+        // 绘制按钮背景
+        ctx.fillStyle = btn.color;
+        ctx.strokeStyle = '#E2E8F0';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.roundRect(btn.x, btn.y, btn.width, btn.height, 16);
+        ctx.fill();
+        ctx.stroke();
+        
+        // 绘制按钮文本
+        ctx.fillStyle = '#2D3748';
+        ctx.font = 'bold 16px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(btn.label, btn.x + btn.width / 2, btn.y + 90);
+      });
+    }
+    
+    // 检查点击是否在按钮上
+    function checkButtonClick(x, y) {
+      const buttonWidth = (canvas.width - 90) / 2;
+      const buttonHeight = 120;
+      const startX = 30;
+      const startY = 208;
+      
+      const buttons = [
+        { x: startX, y: startY, width: buttonWidth, height: buttonHeight, label: '情绪倾诉' },
+        { x: startX + buttonWidth + 30, y: startY, width: buttonWidth, height: buttonHeight, label: '呼吸放松' },
+        { x: startX, y: startY + buttonHeight + 20, width: buttonWidth, height: buttonHeight, label: '心理科普' },
+        { x: startX + buttonWidth + 30, y: startY + buttonHeight + 20, width: buttonWidth, height: buttonHeight, label: '心情日记' }
+      ];
+      
+      for (let i = 0; i < buttons.length; i++) {
+        const btn = buttons[i];
+        if (x >= btn.x && x <= btn.x + btn.width && 
+            y >= btn.y && y <= btn.y + btn.height) {
+          return btn.label;
+        }
+      }
+      return null;
+    }
+    
+    // 添加事件监听器
+    canvas.addEventListener('click', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      
+      const clickedButton = checkButtonClick(x, y);
+      
+      debug.innerHTML = `
+        点击事件:<br>
+        clientX: ${e.clientX}<br>
+        clientY: ${e.clientY}<br>
+        Canvas X: ${x}<br>
+        Canvas Y: ${y}<br>
+        点击按钮: ${clickedButton || '无'}
+      `;
+      
+      if (clickedButton) {
+        console.log(`点击了按钮: ${clickedButton}`);
+        // 绘制点击效果
+        ctx.fillStyle = 'rgba(91, 139, 247, 0.3)';
+        ctx.fillRect(x - 20, y - 20, 40, 40);
+      }
+    });
+    
+    // 初始化
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+    
+    console.log('Canvas事件测试页面已加载');
+    console.log('Canvas尺寸:', canvas.width, 'x', canvas.height);
+  </script>
+</body>
+</html>
